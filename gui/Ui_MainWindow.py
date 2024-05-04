@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_mainwindow.ui'
+## Form generated from reading UI file 'ui_mainwindowMoWDxV.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.0
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,25 +15,24 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFormLayout, QFrame, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QListWidget,
-    QListWidgetItem, QMainWindow, QProgressBar, QPushButton,
-    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFormLayout, QFrame, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMainWindow, QProgressBar,
+    QPushButton, QSizePolicy, QSpacerItem, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(768, 480)
+        MainWindow.resize(754, 535)
         font = QFont()
-        font.setFamily(u"Microsoft YaHei UI")
+        font.setFamilies([u"Microsoft YaHei UI"])
         MainWindow.setFont(font)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.verticalLayout = QVBoxLayout(self.centralwidget)
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.gridLayout_2 = QGridLayout(self.centralwidget)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.pushButtonAddFiles = QPushButton(self.centralwidget)
         self.pushButtonAddFiles.setObjectName(u"pushButtonAddFiles")
         self.pushButtonAddFiles.setEnabled(True)
@@ -43,14 +42,11 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.pushButtonAddFiles.sizePolicy().hasHeightForWidth())
         self.pushButtonAddFiles.setSizePolicy(sizePolicy)
 
-        self.horizontalLayout_2.addWidget(self.pushButtonAddFiles)
+        self.gridLayout_2.addWidget(self.pushButtonAddFiles, 0, 0, 1, 1)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer = QSpacerItem(620, 21, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.horizontalLayout_2.addItem(self.horizontalSpacer)
-
-
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.gridLayout_2.addItem(self.horizontalSpacer, 0, 1, 1, 1)
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
@@ -81,8 +77,8 @@ class Ui_MainWindow(object):
         self.groupBox_2.setObjectName(u"groupBox_2")
         sizePolicy1.setHeightForWidth(self.groupBox_2.sizePolicy().hasHeightForWidth())
         self.groupBox_2.setSizePolicy(sizePolicy1)
-        self.verticalLayout_3 = QVBoxLayout(self.groupBox_2)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.formLayout_2 = QFormLayout(self.groupBox_2)
+        self.formLayout_2.setObjectName(u"formLayout_2")
         self.formLayout = QFormLayout()
         self.formLayout.setObjectName(u"formLayout")
         self.label_2 = QLabel(self.groupBox_2)
@@ -141,12 +137,12 @@ class Ui_MainWindow(object):
         self.formLayout.setWidget(4, QFormLayout.FieldRole, self.lineEditMaxSilence)
 
 
-        self.verticalLayout_3.addLayout(self.formLayout)
+        self.formLayout_2.setLayout(0, QFormLayout.SpanningRole, self.formLayout)
 
         self.label_7 = QLabel(self.groupBox_2)
         self.label_7.setObjectName(u"label_7")
 
-        self.verticalLayout_3.addWidget(self.label_7)
+        self.formLayout_2.setWidget(1, QFormLayout.SpanningRole, self.label_7)
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
@@ -162,17 +158,38 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.addWidget(self.pushButtonBrowse)
 
 
-        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
+        self.formLayout_2.setLayout(2, QFormLayout.SpanningRole, self.horizontalLayout_4)
+
+        self.label = QLabel(self.groupBox_2)
+        self.label.setObjectName(u"label")
+
+        self.formLayout_2.setWidget(3, QFormLayout.SpanningRole, self.label)
+
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.lineEditOutputMappingFile = QLineEdit(self.groupBox_2)
+        self.lineEditOutputMappingFile.setObjectName(u"lineEditOutputMappingFile")
+        self.lineEditOutputMappingFile.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+
+        self.horizontalLayout_5.addWidget(self.lineEditOutputMappingFile)
+
+        self.pushButtonBrowseMappingFile = QPushButton(self.groupBox_2)
+        self.pushButtonBrowseMappingFile.setObjectName(u"pushButtonBrowseMappingFile")
+
+        self.horizontalLayout_5.addWidget(self.pushButtonBrowseMappingFile)
+
+
+        self.formLayout_2.setLayout(4, QFormLayout.SpanningRole, self.horizontalLayout_5)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
-        self.verticalLayout_3.addItem(self.verticalSpacer)
+        self.formLayout_2.setItem(5, QFormLayout.FieldRole, self.verticalSpacer)
 
 
         self.horizontalLayout.addWidget(self.groupBox_2)
 
 
-        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.gridLayout_2.addLayout(self.horizontalLayout, 1, 0, 1, 2)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
@@ -193,7 +210,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.addWidget(self.pushButtonStart)
 
 
-        self.verticalLayout.addLayout(self.horizontalLayout_3)
+        self.gridLayout_2.addLayout(self.horizontalLayout_3, 2, 0, 1, 2)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -221,6 +238,10 @@ class Ui_MainWindow(object):
         self.label_7.setText(QCoreApplication.translate("MainWindow", u"Output Directory (default to the same as the audio)", None))
         self.lineEditOutputDir.setText("")
         self.pushButtonBrowse.setText(QCoreApplication.translate("MainWindow", u"Browse...", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Output mapping file (optional)", None))
+        self.lineEditOutputMappingFile.setText("")
+        self.pushButtonBrowseMappingFile.setText(QCoreApplication.translate("MainWindow", u"Browse...", None))
         self.pushButtonAbout.setText(QCoreApplication.translate("MainWindow", u"About", None))
         self.pushButtonStart.setText(QCoreApplication.translate("MainWindow", u"Start", None))
     # retranslateUi
+

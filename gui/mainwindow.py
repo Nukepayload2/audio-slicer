@@ -1,8 +1,11 @@
+import array
 import os
 
 import soundfile
 import numpy as np
 import urllib
+import debugpy
+import json
 
 from typing import List
 from PySide6.QtCore import *
@@ -14,6 +17,7 @@ from gui.Ui_MainWindow import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
+    active_worker:QThread
     def __init__(self):
         super(MainWindow, self).__init__()
 
@@ -22,6 +26,7 @@ class MainWindow(QMainWindow):
 
         self.ui.pushButtonAddFiles.clicked.connect(self._q_add_audio_files)
         self.ui.pushButtonBrowse.clicked.connect(self._q_browse_output_dir)
+        self.ui.pushButtonBrowseMappingFile.clicked.connect(self._q_browse_mapping_file)
         self.ui.pushButtonClearList.clicked.connect(self._q_clear_audio_list)
         self.ui.pushButtonAbout.clicked.connect(self._q_about)
         self.ui.pushButtonStart.clicked.connect(self._q_start)
@@ -41,7 +46,6 @@ class MainWindow(QMainWindow):
         self.ui.listWidgetTaskList.setAlternatingRowColors(True)
 
         # State variables
-        self.workers: list[QThread] = []
         self.workCount = 0
         self.workFinished = 0
         self.processing = False
@@ -56,6 +60,12 @@ class MainWindow(QMainWindow):
             self, "Browse Output Directory", ".")
         if path != "":
             self.ui.lineEditOutputDir.setText(QDir.toNativeSeparators(path))
+            
+    def _q_browse_mapping_file(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Browse Mapping file", ".", "Mapping file (*.json)")
+        if path != "":
+            self.ui.lineEditOutputMappingFile.setText(QDir.toNativeSeparators(path))
 
     def _q_add_audio_files(self):
         if self.processing:
@@ -92,9 +102,24 @@ class MainWindow(QMainWindow):
         if item_count == 0:
             return
 
+        # Collect paths
+        paths: list[str] = []
+        for i in range(0, item_count):
+            item = self.ui.listWidgetTaskList.item(i)
+            path = item.data(Qt.ItemDataRole.UserRole + 1)  # Get full path
+            paths.append(path)
+
+        self.ui.progressBar.setMaximum(item_count)
+        self.ui.progressBar.setValue(0)
+
+        self.workCount = item_count
+        self.workFinished = 0
+        self.setProcessing(True)
+        
         class WorkThread(QThread):
             oneFinished = Signal()
-
+            task_items:list[TaskItem]=[]
+    
             def __init__(self, filenames: List[str], window: MainWindow):
                 super().__init__()
 
@@ -102,6 +127,7 @@ class MainWindow(QMainWindow):
                 self.win = window
 
             def run(self):
+                debugpy.debug_this_thread()
                 for filename in self.filenames:
                     audio, sr = soundfile.read(filename, dtype=np.float32)
                     is_mono = True
@@ -117,8 +143,11 @@ class MainWindow(QMainWindow):
                         hop_size=int(self.win.ui.lineEditHopSize.text()),
                         max_sil_kept=int(self.win.ui.lineEditMaxSilence.text())
                     )
-                    chunks = slicer.slice(audio)
+                    time_spans,chunks = slicer.slice(audio)
                     out_dir = self.win.ui.lineEditOutputDir.text()
+                    self.win.last_out_dir=out_dir
+                    mapping_file = self.win.ui.lineEditOutputMappingFile.text()
+                    self.win.last_mapping_file=mapping_file
                     if out_dir == '':
                         out_dir = os.path.dirname(os.path.abspath(filename))
                     else:
@@ -127,46 +156,41 @@ class MainWindow(QMainWindow):
                         if not info.exists():
                             info.mkpath(out_dir)
 
+                    has_mapping = mapping_file != ''
+                    mapping_items:list[SliceItem]=[]
+            
                     for i, chunk in enumerate(chunks):
-                        path = os.path.join(out_dir, f'%s_%d.wav' % (os.path.basename(filename)
-                                                                     .rsplit('.', maxsplit=1)[0], i))
+                        out_wav_name = f"{os.path.basename(filename).rsplit('.', maxsplit=1)[0]}_{i}.wav"
+                        out_wav_path = os.path.join(out_dir, out_wav_name)
                         if not is_mono:
                             chunk = chunk.T
-                        soundfile.write(path, chunk, sr)
+                        soundfile.write(out_wav_path, chunk, sr)
+                        if has_mapping:
+                            start_time,end_time=time_spans[i]
+                            mapping_items.append(SliceItem(start_time,end_time,out_wav_name))
 
+                    self.task_items.append(TaskItem(QDir.toNativeSeparators(filename),mapping_items))
                     self.oneFinished.emit()
-
-        # Collect paths
-        paths: list[str] = []
-        for i in range(0, item_count):
-            item = self.ui.listWidgetTaskList.item(i)
-            path = item.data(Qt.ItemDataRole.UserRole + 1)  # Get full path
-            paths.append(path)
-
-        self.ui.progressBar.setMaximum(item_count)
-        self.ui.progressBar.setValue(0)
-
-        self.workCount = item_count
-        self.workFinished = 0
-        self.setProcessing(True)
 
         # Start work thread
         worker = WorkThread(paths, self)
+        self.active_worker=worker  # Collect in case of auto deletion
         worker.oneFinished.connect(self._q_oneFinished)
         worker.finished.connect(self._q_threadFinished)
         worker.start()
-
-        self.workers.append(worker)  # Collect in case of auto deletion
 
     def _q_oneFinished(self):
         self.workFinished += 1
         self.ui.progressBar.setValue(self.workFinished)
 
     def _q_threadFinished(self):
-        # Join all workers
-        for worker in self.workers:
-            worker.wait()
-        self.workers.clear()
+        if self.last_mapping_file != '':
+            mapping_object = SliceMapping(self.last_out_dir,self.active_worker.task_items)
+            mapping_json = json.dumps(mapping_object, indent=2, default=lambda o: o.__dict__)
+            with open(self.last_mapping_file, 'w', encoding='utf-8') as file:
+                file.write(mapping_json)
+            
+        self.active_worker=None
         self.setProcessing(False)
 
         QMessageBox.information(
@@ -190,7 +214,9 @@ class MainWindow(QMainWindow):
         self.ui.lineEditHopSize.setEnabled(enabled)
         self.ui.lineEditMaxSilence.setEnabled(enabled)
         self.ui.lineEditOutputDir.setEnabled(enabled)
+        self.ui.lineEditOutputMappingFile.setEnabled(enabled)
         self.ui.pushButtonBrowse.setEnabled(enabled)
+        self.ui.pushButtonBrowseMappingFile.setEnabled(enabled)
         self.processing = processing
 
     # Event Handlers
@@ -228,3 +254,26 @@ class MainWindow(QMainWindow):
             item.setData(Qt.ItemDataRole.UserRole + 1,
                          path)
             self.ui.listWidgetTaskList.addItem(item)
+
+class SliceItem:
+    start:int
+    end:int
+    file:str
+    def __init__(self, start:int, end:int, file:str):
+        self.start = int(start)
+        self.end = int(end)
+        self.file = file
+
+class TaskItem:
+    original_file:str
+    slices:list[SliceItem]
+    def __init__(self, original_file:str, slices:list[SliceItem]):
+        self.originalFile = original_file
+        self.slices = slices
+
+class SliceMapping:
+    output_folder:str
+    tasks:list[TaskItem]
+    def __init__(self, output_folder:str, tasks:list[TaskItem]):
+        self.outputFolder = output_folder
+        self.tasks = tasks

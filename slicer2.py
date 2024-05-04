@@ -63,19 +63,25 @@ class Slicer:
         self.max_sil_kept = round(sr * max_sil_kept / 1000 / self.hop_size)
 
     def _apply_slice(self, waveform, begin, end):
+        start_index = begin * self.hop_size
         if len(waveform.shape) > 1:
-            return waveform[:, begin * self.hop_size: min(waveform.shape[1], end * self.hop_size)]
+            end_index = min(waveform.shape[1], end * self.hop_size)
+            chunk = waveform[:, start_index: end_index]
         else:
-            return waveform[begin * self.hop_size: min(waveform.shape[0], end * self.hop_size)]
+            end_index = min(waveform.shape[0], end * self.hop_size)
+            chunk = waveform[start_index: end_index]
+        return (start_index,end_index,chunk)
 
     # @timeit
     def slice(self, waveform):
+        time_spans : list[tuple[int, int]] =[]
         if len(waveform.shape) > 1:
             samples = waveform.mean(axis=0)
         else:
             samples = waveform
         if (samples.shape[0] + self.hop_size - 1) // self.hop_size <= self.min_length:
-            return [waveform]
+            time_spans.append((0,-1))
+            return (time_spans,[waveform])
         rms_list = get_rms(y=samples, frame_length=self.win_size, hop_length=self.hop_size).squeeze(0)
         sil_tags = []
         silence_start = None
@@ -132,16 +138,23 @@ class Slicer:
             sil_tags.append((pos, total_frames + 1))
         # Apply and return slices.
         if len(sil_tags) == 0:
-            return [waveform]
+            time_spans.append((0,-1))
+            return (time_spans,[waveform])
         else:
             chunks = []
             if sil_tags[0][0] > 0:
-                chunks.append(self._apply_slice(waveform, 0, sil_tags[0][0]))
+                start_index,end_index,slice_chunk=self._apply_slice(waveform, 0, sil_tags[0][0])
+                time_spans.append((start_index,end_index))
+                chunks.append(slice_chunk)
             for i in range(len(sil_tags) - 1):
-                chunks.append(self._apply_slice(waveform, sil_tags[i][1], sil_tags[i + 1][0]))
+                start_index,end_index,slice_chunk=self._apply_slice(waveform, sil_tags[i][1], sil_tags[i + 1][0])
+                time_spans.append((start_index,end_index))
+                chunks.append(slice_chunk)
             if sil_tags[-1][1] < total_frames:
-                chunks.append(self._apply_slice(waveform, sil_tags[-1][1], total_frames))
-            return chunks
+                start_index,end_index,slice_chunk=self._apply_slice(waveform, sil_tags[-1][1], total_frames)
+                time_spans.append((start_index,end_index))
+                chunks.append(slice_chunk)
+            return (time_spans,chunks)
 
 
 def main():
