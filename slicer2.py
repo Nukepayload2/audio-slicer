@@ -61,6 +61,7 @@ class Slicer:
         self.min_length = round(sr * min_length / 1000 / self.hop_size)
         self.min_interval = round(min_interval / self.hop_size)
         self.max_sil_kept = round(sr * max_sil_kept / 1000 / self.hop_size)
+        self.sample_rate = sr
 
     def _apply_slice(self, waveform, begin, end):
         start_index = begin * self.hop_size
@@ -70,7 +71,7 @@ class Slicer:
         else:
             end_index = min(waveform.shape[0], end * self.hop_size)
             chunk = waveform[start_index: end_index]
-        return (start_index,end_index,chunk)
+        return (start_index/self.sample_rate*1000,end_index/self.sample_rate*1000,chunk)
 
     # @timeit
     def slice(self, waveform):
