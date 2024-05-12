@@ -60,6 +60,8 @@ class MainWindow(QMainWindow):
             self, "Browse Output Directory", ".")
         if path != "":
             self.ui.lineEditOutputDir.setText(QDir.toNativeSeparators(path))
+            if self.ui.lineEditOutputMappingFile.text() == "":
+                self.ui.lineEditOutputMappingFile.setText(QDir.toNativeSeparators(path+"/mapping.json"))
             
     def _q_browse_mapping_file(self):
         path, _ = QFileDialog.getSaveFileName(
