@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
                 self.win = window
 
             def run(self):
-                debugpy.debug_this_thread()
+                #debugpy.debug_this_thread()
                 for filename in self.filenames:
                     audio, sr = soundfile.read(filename, dtype=np.float32)
                     is_mono = True
